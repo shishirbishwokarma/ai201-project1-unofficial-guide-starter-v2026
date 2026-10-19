@@ -170,7 +170,12 @@ def build_index(
             documents=[c.text for c in window],
             embeddings=embed([c.text for c in window]),
             metadatas=[
-                {"source": c.source, "index": c.index, "produced_by": c.produced_by}
+                {
+                    "source": c.source,
+                    "index": c.index,
+                    "produced_by": c.produced_by,
+                    "category": category_of(c.source),
+                }
                 for c in window
             ],
         )
@@ -178,16 +183,23 @@ def build_index(
     return len(chunks)
 
 
+def category_of(source: str) -> str:
+    """The filename prefix before the first underscore: dining_x.txt -> dining."""
+    return source.split("_", 1)[0]
+
+
 def search(
     question: str,
     top_k: int | None = None,
     corpus: str | None = None,
     variant: str = "default",
+    category: str | None = None,
 ) -> list[Result]:
     """
     Retrieve the chunks closest in meaning to a question.
 
-    Returns them nearest-first, each with its distance.
+    Returns them nearest-first, each with its distance. With `category`, only
+    chunks whose source filename starts with that prefix are searched.
     """
     top_k = top_k or config.TOP_K
     name = config.collection_name(corpus, variant)
@@ -202,6 +214,7 @@ def search(
     raw = collection.query(
         query_embeddings=embed([question]),
         n_results=min(top_k, collection.count()),
+        where={"category": category} if category else None,
     )
 
     results: list[Result] = []

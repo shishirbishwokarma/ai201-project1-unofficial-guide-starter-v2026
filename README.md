@@ -188,6 +188,29 @@ Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_p
 
 **Declared before building: Metadata filtering.** Every campus_life filename starts with a category (`admin_`, `course_`, `dining_`, `housing_`, `study_`, `transit_`, `money_`…). I'm adding a `--category` option to `ask` and `retrieve` that narrows retrieval to chunks from that category only. I'll show the same query run with and without the filter, and what changed in the results.
 
+**Built.** At index time each chunk gets a `category` metadata field: the filename prefix before the first underscore, from `category_of` in `store.py`. `search` passes `where={"category": ...}` to Chroma when one is given. `python app.py retrieve "..." --category study` and `python app.py ask "..." --category study` use it. I re-indexed after the change (still 88 chunks).
+
+**Same query, without and with the filter:** `How late is the library open during term?`
+
+Without filter:
+```
+#   distance   source                           preview
+1   0.4614     admin_library_holds.txt          On the library holds  You can place a hold on a chec...
+2   0.5081     study_library_hours.txt          Library hours and where to actually sit  Open until ...
+3   0.5082     housing_calder_annexe_noise.txt  Noise levels in Calder Annexe  Asked about this a lo...
+4   0.5304     course_cs_340.txt                CS 340 Databases  I'm a junior and I've done this tw...
+5   0.5552     admin_study_abroad.txt           On the study abroad  Applications open in October fo...
+```
+
+With `--category study`:
+```
+#   distance   source                           preview
+1   0.5081     study_library_hours.txt          Library hours and where to actually sit  Open until ...
+2   0.6455     study_group_rooms.txt            Booking a group study room  Rooms book two weeks ahe...
+```
+
+**What changed:** the wrong document (`admin_library_holds.txt`, which only shares the word "library") drops out, and the document with the answer moves from #2 to #1. The three unrelated chunks (a noise review, a CS course, study abroad) are gone, and only two chunks come back because the `study` category has only two documents. Both versions answered "open until 2am" from `study_library_hours.txt`. Unfiltered, the model picked the right chunk out of the noise. Filtered, the model only sees the two study documents. One side effect: the best distance the gate sees goes **up** from 0.461 to 0.508, because the closest overall match was the wrong document. The filter makes the result list cleaner, but brings this question nearer the 0.6 cutoff, not further from it.
+
 ---
 
 # Unit 2

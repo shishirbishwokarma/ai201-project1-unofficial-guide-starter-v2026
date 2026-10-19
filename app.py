@@ -154,6 +154,7 @@ def cmd_retrieve(args):
         top_k=args.top_k or config.TOP_K,
         corpus=args.corpus or config.CORPUS,
         variant=args.variant,
+        category=args.category,
     )
 
     if not results:
@@ -161,6 +162,8 @@ def cmd_retrieve(args):
         return
 
     print(f"\nQuestion: {args.question}\n")
+    if args.category:
+        print(f"Filtered to category: {args.category}\n")
     print(f"{'#':<3} {'distance':<10} {'source':<32} preview")
     print("-" * 100)
     for i, r in enumerate(results, 1):
@@ -183,6 +186,7 @@ def ask_pipeline(
     threshold=None,
     on_gate=None,
     on_prompt=None,
+    category=None,
 ):
     """Retrieve, gate, answer. Returns the outcome and prints nothing.
 
@@ -208,6 +212,7 @@ def ask_pipeline(
         top_k=top_k or config.TOP_K,
         corpus=corpus or config.CORPUS,
         variant=variant,
+        category=category,
     )
     decision = gate.check(results, threshold=threshold)
     if on_gate is not None:
@@ -244,6 +249,7 @@ def _ask_one(
     threshold,
     show_distances=True,
     show_prompt=False,
+    category=None,
 ):
     import gate
     from generate import GROUNDING_INSTRUCTION
@@ -271,6 +277,7 @@ def _ask_one(
         threshold=threshold,
         on_gate=print_distances if show_distances else None,
         on_prompt=print_prompt if show_prompt else None,
+        category=category,
     )
 
     if outcome["refused"]:
@@ -295,6 +302,7 @@ def cmd_ask(args):
                 args.top_k,
                 args.threshold,
                 show_prompt=args.show_prompt,
+                category=args.category,
             )
         else:
             print("Ask a question, or press Enter on an empty line to quit.\n")
@@ -313,6 +321,7 @@ def cmd_ask(args):
                     args.top_k,
                     args.threshold,
                     show_prompt=args.show_prompt,
+                    category=args.category,
                 )
     finally:
         print(gen.usage())
@@ -360,11 +369,19 @@ def build_parser():
     p_ret = sub.add_parser("retrieve", help="show distances only (Milestone 4)")
     p_ret.add_argument("question")
     p_ret.add_argument("--top-k", type=int)
+    p_ret.add_argument(
+        "--category",
+        help="only search documents whose filename starts with this, e.g. dining",
+    )
     p_ret.set_defaults(func=cmd_retrieve)
 
     p_ask = sub.add_parser("ask", help="ask a question")
     p_ask.add_argument("question", nargs="?")
     p_ask.add_argument("--top-k", type=int)
+    p_ask.add_argument(
+        "--category",
+        help="only search documents whose filename starts with this, e.g. dining",
+    )
     p_ask.add_argument("--threshold", type=float, help="override the gate cutoff")
     p_ask.add_argument(
         "--show-prompt",

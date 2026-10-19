@@ -25,6 +25,7 @@ contains the answer.
 **Why this target:**
 <!-- e.g. "One of my questions is about a topic only two documents mention, so
      I expect that one to be hard." -->
+I want the program to fetch the chunk with the right answer, so I can compare what the response looks like when it has the right answer vs. no answer. I picked 4 of 5 and not 5 of 5 because three of my questions have a lookalike document (add/drop vs. withdrawal deadline, library hours vs. library holds, and two different documents about campus jobs), so I expect retrieval to grab the wrong one at least once.
 
 ---
 
@@ -35,6 +36,7 @@ Every answer the system produces names at least one source document.
 **Why this target:**
 <!-- Why all five and not four? What about your setup makes that achievable —
      or what would have to go wrong for it not to be? -->
+I want every answer to name its source so I can go to that document and check that it's the correct one; if the source is wrong, I know I need to change the code logic. It's 5 of 5 and not 4 of 5 because every chunk already carries its source filename, so the model always has a source to name. If even one answer leaves it out, the prompt isn't doing its job.
 
 ---
 
@@ -52,46 +54,33 @@ in at least 4 of 5 tries.
 **Why this target:**
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
-
+I don't want the system to make up an answer when my documents don't have the information. I picked 4 of 5 and not 5 of 5 because four of my out-of-scope questions (Mongolia, diesel engines, the World Cup, Rust) have nothing close in a campus-life corpus, but the ibuprofen question is near health_center.txt and might slip past the cutoff.
 ---
 
-## 4. Something about your chunks
+## 4. My chunks are the right size
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know if your chunks were the right size? Name something
-     countable or observable.
-
-     Examples of the right shape — don't copy these, they should come from
-     what you actually saw in Milestone 3:
-       - "At least 4 of 5 sampled chunks read as a complete thought, with no
-          sentence cut in half at either end."
-       - "No chunk is shorter than 200 characters, since anything below that
-          in my corpus turned out to be a heading with no content under it." -->
+Each document becomes exactly one chunk. Running python app.py index produces 88 chunks for the 88 documents, and every chunk is between 150 and 600 characters.
 
 
 
 **Why this target:**
 
+Every document in campus_life is between 183 and 554 characters and holds one self-contained review. A chunk is too big if it would merge two reviews, and too small if it splits one so the title line ends up apart from its facts. If the chunk count goes above 88, something got split. If any chunk is under 150 characters, it's probably a title with no content under it.
+
 
 
 ---
 
-## 5. Your choice
+## 5. The answer states the right fact
 
-<!-- YOU WRITE THIS ONE TOO.
 
-     Pick something you actually care about getting right. It could be about
-     speed, about refusals, about a particular kind of question your corpus
-     handles badly, about source attribution being correct rather than merely
-     present — anything, as long as it names a number or an observable
-     outcome. -->
+For at least 4 of my 5 test questions, the generated answer contains the correct value from expects in questions.py ("six", "three", "2am", "20", "40").
 
 
 
 **Why this target:**
 
-
+Criterion 1 checks that the right chunk was retrieved, and criterion 2 checks that a source is named. Neither catches the model reading the right chunk and still giving the wrong number. I care about this because the facts here are short numbers sitting next to other numbers. The add/drop document has both "week two" and "week six." I chose 4 of 5 rather than 5 of 5 because a correct answer might be worded differently from my expects string, such as "40 minutes" vs. "every forty minutes."
 
 ---
 

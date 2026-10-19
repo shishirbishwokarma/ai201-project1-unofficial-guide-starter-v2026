@@ -46,8 +46,6 @@ Every `campus_life` post is short — 183 to 554 characters — and covers one p
 
      Milestone 3. -->
 
-Every campus_life post is 183–554 characters and covers one place or policy, with the subject named only in the title line. Splitting would separate facts like "closes at 7:00pm" from the name they belong to, so I keep one post as one chunk: size 600 (just above the longest post), overlap 0 (nothing is ever cut, so there's nothing to overlap).
-
 
 
 

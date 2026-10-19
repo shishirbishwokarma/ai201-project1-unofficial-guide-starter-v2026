@@ -184,6 +184,10 @@ Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_p
      claims earns nothing.
      ───────────────────────────────────────────────────────────────────────── -->
 
+## Stretch Features
+
+**Declared before building: Metadata filtering.** Every campus_life filename starts with a category (`admin_`, `course_`, `dining_`, `housing_`, `study_`, `transit_`, `money_`…). I'm adding a `--category` option to `ask` and `retrieve` that narrows retrieval to chunks from that category only. I'll show the same query run with and without the filter, and what changed in the results.
+
 ---
 
 # Unit 2

@@ -27,6 +27,8 @@
 
      Milestone 5. -->
 
+This answers questions about student life at one university, using `campus_life`: 88 short, student-written posts about courses, dining halls, residence halls, campus jobs, transit and registrar rules. You ask something like "Until what week can I drop a course?" or "How late is the library open during term?". It finds the posts closest to your question, and a language model answers using only those posts, naming the file the answer came from. If nothing in the posts is close enough, or the posts don't actually cover the question, it says it doesn't have enough information instead of guessing.
+
 ## Chunking Strategy
 
 **Chunk size:** 600
@@ -175,9 +177,9 @@ Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_p
 
      Milestone 5. -->
 
-**1.**
+**1.** I asked Claude to write `split_documents` in `chunker.py` from my notes: campus_life posts are 183–554 characters, and the subject is named only in the title line. It wrote a version that keeps each post as one chunk and splits a longer post only at sentence ends, repeating the title on each piece. I'd already set `CHUNK_SIZE = 600` and `CHUNK_OVERLAP = 0` in `config.py` myself, so the code used my numbers. Before indexing, I checked it with `python chunker.py`: 88 chunks from 88 documents, 178–549 characters, all labelled `split_documents`.
 
-**2.**
+**2.** I asked Claude whether my sample answer to "Until what week can I drop a course?" stayed within the sources. At first it said citing `admin_withdrawal_deadline.txt` was wrong. When I printed the prompt with `--show-prompt`, that file did say "Dropping ends at week six," so that claim was wrong and I kept the citation. The real problem was that the answer dropped the catch that a drop after week two shows as a W. I added one rule to `GROUNDING_INSTRUCTION` to include conditions and exceptions, re-ran the question, and the W caveat appeared. I also re-ran "What time does the gym open?" to confirm it still refused.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never

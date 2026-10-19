@@ -55,6 +55,7 @@ in at least 4 of 5 tries.
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
 I don't want the system to make up an answer when my documents don't have the information. I picked 4 of 5 and not 5 of 5 because four of my out-of-scope questions (Mongolia, diesel engines, the World Cup, Rust) have nothing close in a campus-life corpus, but the ibuprofen question is near health_center.txt and might slip past the cutoff.
+
 ---
 
 ## 4. My chunks are the right size

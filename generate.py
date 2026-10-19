@@ -279,6 +279,7 @@ Rules:
 - Use only the information in the documents below. Do not use anything you know from elsewhere.
 - If the documents don't cover the question, say you don't have enough information. Do not guess.
 - Name the document your answer came from, using the filename given in each excerpt.
+- If the document attaches a condition or catch to the fact (a "but", an exception, a cost), include it.
 - Be brief. Two or three sentences is usually enough."""
 
 

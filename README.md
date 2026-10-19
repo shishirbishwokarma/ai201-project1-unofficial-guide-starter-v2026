@@ -1,6 +1,6 @@
 # The Unofficial Guide
 
-<!-- Replace this line with your name and which corpus you picked. -->
+**Shishir Bishwokarma** — corpus: `campus_life`
 
 > **This file is your submission.** Fill it in as you go — most sections get
 > written during the milestone that produces them, not at the end.
@@ -29,8 +29,10 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 600
+**Overlap:** 0
+
+Every `campus_life` post is short — 183 to 554 characters — and covers one place, course or policy, with the subject named only in the title line ("Halden Hall", "On the add/drop deadline"); the body just says "here" or "this". Splitting a post would separate facts like "closes at 7:00pm" or "Expect 8 to 10 hours a week" from the name they belong to, so `split_documents` keeps one post as one chunk. 600 sits just above the longest post (554), so nothing is cut today, and overlap is 0 because there are no cut edges to overlap. If a longer post is ever added, it gets split at sentence boundaries with the title repeated on each piece. The starter's 800/120 already produced 88 chunks from 88 documents — I kept that outcome on purpose, but with a cap that fits the corpus and an overlap that isn't pretending to do anything.
 
 <!-- What about YOUR documents made you pick these numbers? Short posts and
      long sectioned guides don't want the same chunking, and "800 seemed
@@ -41,6 +43,12 @@
      more than pretending you got it right first time.
 
      Milestone 3. -->
+
+Every campus_life post is 183–554 characters and covers one place or policy, with the subject named only in the title line. Splitting would separate facts like "closes at 7:00pm" from the name they belong to, so I keep one post as one chunk: size 600 (just above the longest post), overlap 0 (nothing is ever cut, so there's nothing to overlap).
+
+
+
+
 
 ## Sample Chunks
 
@@ -53,29 +61,58 @@
 
      Milestone 3. -->
 
-**Chunk 1** — source: `` — produced by: ``
+**Chunk 1** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 ```
 
-**Chunk 2** — source: `` — produced by: ``
+**Chunk 2** — source: `course_biol_160.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+BIOL 160 Cell Biology
+
+I lived here my sophomore year. Format is lecture three times a week with a weekly lab. Assessment: four unit tests and a cumulative final. Not curved.
+
+Expect 9 to 11 hours a week, the heaviest first-year course by reputation.
+
+The one piece of advice: the unit tests come fast, roughly every three weeks; falling behind once is very hard to recover from.
 ```
 
-**Chunk 3** — source: `` — produced by: ``
+**Chunk 3** — source: `course_hist_118_workload.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+Workload for HIST 118 Modern World History
+
+People keep asking so: a lot of reading, about 120 pages a week, but no problem sets. That's real time, not optimistic time.
+
+It's front-loaded — the first month is heavier than the rest, partly because you're learning the format.
 ```
 
-**Chunk 4** — source: `` — produced by: ``
+**Chunk 4** — source: `dining_pellew_dining_hall_followup.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+Re: Pellew Dining Hall
+
+Adding to what people have said about Pellew Dining Hall. The wait figure of 12 to 18 minutes at peak matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
+
+Also worth saying: the furthest hall from anywhere, next to the athletics centre. Nobody tells you this at orientation.
 ```
 
-**Chunk 5** — source: `` — produced by: ``
+**Chunk 5** — source: `housing_innisfree_hall.txt#0` — produced by: `chunker.py::split_documents`
 
 ```
+Innisfree Hall — what it's actually like
+
+Transferred in last year, so take this with a grain of salt. Built 1991, renovated 2022. Rooms are doubles arranged as pairs sharing one bathroom between two rooms.
+
+The good: the shared-bathroom-between-two-rooms arrangement is the best compromise on campus.
+
+The bad: no air conditioning, which matters for the first three weeks of September.
+
+Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building is L-shaped and the short wing is much quieter.
 ```
 
 ## Sample Answer
@@ -83,12 +120,21 @@
 <!-- One complete question and answer, pasted as text, with the source line
      visible. Milestone 4. -->
 
-**Question:**
+**Question:** Until what week can I drop a course?
 
 **Answer:**
 
 ```
+  (best distance 0.305, cutoff 0.6)
+
+You can drop a course through the end of week six, though a drop after week two shows as a W on your transcript. 
+
+Source: admin_add_drop_deadline.txt (also mentioned in admin_withdrawal_deadline.txt)
+
+Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_pass_fail_option.txt, admin_withdrawal_deadline.txt, advising_registration.txt
 ```
+
+**Grounding instruction:** I read `GROUNDING_INSTRUCTION` in `generate.py` with `--show-prompt` and tested it on two campus questions my documents don't answer ("What time does the gym open on weekdays?" at 0.535, "How much does a replacement student ID cost?" at 0.584). Both got past the 0.6 gate, and the model refused both. The refusal rule works. The drift I saw was different: the first answer to the question above said only "through the end of week six" and dropped the catch that a drop after week two shows as a W. In this corpus the catch is usually the point of the post, so I added one rule: *"If the document attaches a condition or catch to the fact (a "but", an exception, a cost), include it."* The answer above is from after that change. The gym question still refuses.
 
 **My relevance cutoff:**
 
@@ -101,9 +147,22 @@
 
      Milestone 4. -->
 
+**0.6.** My five in-corpus questions scored between 0.249 and 0.461; the five out-of-scope questions scored between 0.825 and 0.934, so there's a clean gap of about 0.36. I kept 0.6 rather than the midpoint (~0.64) because my out-of-scope questions are from a completely different world. A campus question my documents don't cover would land closer, and I'd rather refuse it than let the model invent a campus fact.
+
+**What 0.6 gets wrong:** campus questions my documents don't cover still get through. "What time does the gym open on weekdays?" scored 0.535 and "How much does a replacement student ID cost?" scored 0.584, so the gate alone won't stop them, and the grounding instruction has to. My library question passed at 0.461 on the wrong document (`admin_library_holds.txt`), so passing the gate doesn't mean retrieval found the right one. And with only 0.14 between that question and the cutoff, a real question worded differently from the document could be refused.
+
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| Until what week can I drop a course? | Yes | 0.306 |
+| How long does an official transcript take electronically? | Yes | 0.249 |
+| How late is the library open during term? | Yes | 0.461 |
+| What is the maximum number of hours a week I can work on campus during term? | Yes | 0.380 |
+| How often does the campus shuttle run on weekends? | Yes | 0.411 |
+| What is the capital of Mongolia? | No | 0.825 |
+| How do I change the oil in a diesel engine? | No | 0.934 |
+| Who won the 1994 World Cup? | No | 0.886 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.844 |
+| How do I write a for loop in Rust? | No | 0.896 |
 
 ## How I Used AI
 

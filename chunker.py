@@ -22,6 +22,7 @@ to it, write down what you saw, and move on. That's a real observation about
 your pipeline, not giving up.
 """
 
+import re
 from dataclasses import dataclass
 
 import config
@@ -82,22 +83,43 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
-
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
-
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    One post = one chunk. campus_life posts are 183–554 characters and name
+    their subject only in the title line, so splitting would separate facts
+    from what they're about. A post longer than CHUNK_SIZE is split at
+    sentence boundaries, with the title repeated at the top of each piece.
     """
-    return fallback_split(documents)
+    chunks: list[Chunk] = []
+    for doc in documents:
+        text = doc.text.strip()
+        if not text:
+            continue
+
+        if len(text) <= config.CHUNK_SIZE:
+            pieces = [text]
+        else:
+            title, _, body = text.partition("\n")
+            sentences = re.split(r"(?<=[.!?])\s+", body.strip())
+            pieces = []
+            current = ""
+            for sentence in sentences:
+                if current and len(title) + len(current) + len(sentence) + 2 > config.CHUNK_SIZE:
+                    pieces.append(f"{title}\n{current}")
+                    current = sentence
+                else:
+                    current = f"{current} {sentence}".strip()
+            if current:
+                pieces.append(f"{title}\n{current}")
+
+        for index, piece in enumerate(pieces):
+            chunks.append(
+                Chunk(
+                    text=piece,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:

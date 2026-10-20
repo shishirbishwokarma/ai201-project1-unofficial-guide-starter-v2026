@@ -291,11 +291,11 @@ The chunk with "six" was retrieved (criterion 1), the answer names a `.txt` sour
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | 5 of 5 in every run against a target of 4 of 5. Retrieval is deterministic, so all three runs are identical. The library answer only came back at #2, behind `admin_library_holds.txt`, so it counts but is the closest to failing. |
+| 2 | Every answer names a source | MET | All 15 answers name at least one `.txt` file. Library run 3 also cited `housing_calder_annexe_noise.txt`, which looked wrong until I read it: that post does say the library is open until 2am. |
+| 3 | Gate stops out-of-corpus questions | MET | 5 of 5 refused against a target of 4 of 5. Not close: the nearest out-of-scope question was 0.825 against a 0.6 cutoff. |
+| 4 | 88 chunks, each 150–600 characters | MET | `python chunker.py` reports 88 chunks, shortest 178, longest 549. It's deterministic, so it's the same in every run. |
+| 5 | Answer contains the `expects` value | MET | `scorer.py::judge` passed 15 of 15. Because it's a substring test, I also read all 15 answers to check for false passes (e.g. "20" inside "2020"). Every one states the right fact. |
 
 ## Diagnoses
 

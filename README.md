@@ -329,9 +329,9 @@ There is one pattern behind all of this: my corpus has **lookalike documents**. 
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** I switched retrieval to hybrid search. `store.py::search` now ranks every chunk by embedding distance, also scores them on shared keywords with BM25 (`rank-bm25`), and merges the two rankings with reciprocal rank fusion (`store.py::_hybrid_rerank`) before taking the top 5. It's turned on with `HYBRID = True` in `config.py`, so setting it to `False` gives the old behaviour back. Distances aren't changed, so the gate still works the same way.
 
-**Why I picked it:**
+**Why I picked it:** It goes straight at the lookalike-documents pattern in my diagnosis. My library question got `admin_library_holds.txt` first only because it shares the word "library", while the post that answers it actually says "open until 2am **during term**," which keyword matching rewards.
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->
@@ -343,11 +343,32 @@ There is one pattern behind all of this: my corpus has **lookalike documents**. 
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. 88 chunks, each 150–600 characters | 88, 150–600 | 88, 178–549 | 88, 178–549 | 88, 178–549 | MET |
+| 5. Answer contains the `expects` value | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+
+Full log: `results/run_2026-10-20_0046_after.md`, written by `run_eval.py::main`. Criterion 4 doesn't change, because the chunker wasn't touched.
+
+Rank of the post that actually answers each question, before and after (`store.py::search`, top 5):
+
+| Question | Right post | Before | After |
+|---|---|---|---|
+| Until what week can I drop a course? | admin_add_drop_deadline.txt | #1 | #1 |
+| How long does an official transcript take electronically? | admin_transcript_requests.txt | #1 | #1 |
+| How late is the library open during term? | study_library_hours.txt | **#2** | **#1** |
+| What is the maximum number of hours a week I can work on campus during term? | money_jobs.txt | #1 | #1 |
+| How often does the campus shuttle run on weekends? | transit_shuttle.txt | #1 | #1 |
+
+Library question, after (`run_eval.py::main`, run 1):
+
+```
+- Best distance: 0.5081 (passed the gate)
+- Sources retrieved: course_cs_340.txt, housing_calder_annexe_noise.txt, housing_innisfree_hall_noise.txt, housing_morrow_house_noise.txt, study_library_hours.txt
+
+The library is open until 2am during term (*study_library_hours.txt*, *housing_calder_annexe_noise.txt*, *housing_innisfree_hall_noise.txt*, and *housing_morrow_house_noise.txt*).
+```
 
 **Did it help?**
 
@@ -357,6 +378,15 @@ There is one pattern behind all of this: my corpus has **lookalike documents**. 
      tell.
 
      Milestone 4. -->
+
+Partly. It fixed what it was aimed at, but my criteria can't show it, and it moved some things I didn't expect.
+
+**What got better:** the library question now gets the right post at #1, not #2, and the holds post drops out of the top 5 completely. The other four questions stay at #1. That's the improvement I was after, and it's measurable, but it doesn't show up in the After table because every criterion was already 5 of 5. Under the stricter "answer is in the top-ranked chunk" version from my diagnosis, the score would go from 4 of 5 to 5 of 5. My original criteria were too loose to see the difference, which backs up what I said in Diagnoses.
+
+**What moved that I didn't expect:**
+- **The library question got closer to the cutoff.** Its best distance went from 0.461 to 0.508, because the holds post (the closest chunk by embedding, but the wrong one) is no longer in the top 5. It still passes at 0.6, but with less room than before.
+- **The near-miss campus question got a bit further away.** "What time does the gym open on weekdays?" went from 0.535 to 0.565. That moves in the right direction but is still under 0.6, so the gate still lets it through. Hybrid search doesn't fix criterion 3's real weakness.
+- **The top 5 for the library question is now mostly housing noise posts.** I read them: seven different `housing_*_noise.txt` posts all repeat the same sentence, "the library is open until 2am during term." Keyword matching loves that sentence, so the model now cites four files for one fact. The citations are all technically true, but it's the same fact four times taking up retrieval slots, which is the duplication problem I noticed back in Milestone 1.
 
 ## What's Still Broken
 

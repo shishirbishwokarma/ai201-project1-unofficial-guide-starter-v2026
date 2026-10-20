@@ -34,6 +34,7 @@ CHUNK_OVERLAP = 0     # characters shared between neighbouring chunks
 # ─── Retrieval (Milestone 4) ─────────────────────────────────────────────────
 
 TOP_K = 5               # how many chunks to pull back per question
+HYBRID = True           # unit 2: rerank by embedding + BM25 keywords (False = embedding only)
 
 # The relevance gate. If the best chunk is further away than this, the system
 # refuses to answer instead of handing the model thin material.

@@ -18,6 +18,7 @@ rest of the project if they were wrong:
 """
 
 import os
+import re
 import shutil
 from dataclasses import dataclass
 
@@ -211,10 +212,18 @@ def search(
             f"No index called '{name}'. Run `python app.py index` first."
         ) from exc
 
+    where = {"category": category} if category else None
+    if config.HYBRID:
+        # Rank every candidate, so keyword matching can pull up a chunk the
+        # embedding put below the top k.
+        n_results = len(collection.get(where=where, include=[])["ids"])
+    else:
+        n_results = min(top_k, collection.count())
+
     raw = collection.query(
         query_embeddings=embed([question]),
-        n_results=min(top_k, collection.count()),
-        where={"category": category} if category else None,
+        n_results=n_results,
+        where=where,
     )
 
     results: list[Result] = []
@@ -230,7 +239,36 @@ def search(
                 produced_by=str(meta.get("produced_by", "unknown")),
             )
         )
-    return results
+    if config.HYBRID:
+        results = _hybrid_rerank(question, results)
+    return results[:top_k]
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _hybrid_rerank(question: str, results: list[Result]) -> list[Result]:
+    """
+    Reorder embedding results by also scoring them on shared keywords (BM25).
+
+    The two rankings are merged with reciprocal rank fusion: each chunk scores
+    1/(60 + rank) in each list, and the scores are added. A chunk that both
+    methods rank highly wins. Distances are left untouched, so the gate still
+    sees the same best distance.
+    """
+    from rank_bm25 import BM25Okapi
+
+    scores = BM25Okapi([_tokens(r.text) for r in results]).get_scores(_tokens(question))
+    keyword_order = sorted(range(len(results)), key=lambda i: -scores[i])
+    keyword_rank = {i: rank for rank, i in enumerate(keyword_order)}
+
+    # `results` arrives nearest-first, so index i is already the embedding rank.
+    fused = sorted(
+        range(len(results)),
+        key=lambda i: -(1 / (60 + i) + 1 / (60 + keyword_rank[i])),
+    )
+    return [results[i] for i in fused]
 
 
 def index_exists(corpus: str | None = None, variant: str = "default") -> bool:

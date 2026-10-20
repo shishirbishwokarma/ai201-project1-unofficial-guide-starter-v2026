@@ -35,6 +35,7 @@ CHUNK_OVERLAP = 0     # characters shared between neighbouring chunks
 
 TOP_K = 5               # how many chunks to pull back per question
 HYBRID = True           # unit 2: rerank by embedding + BM25 keywords (False = embedding only)
+DEDUPE_OVERLAP = 0.5    # unit 2 stretch: skip a chunk sharing more than this share of words with one already picked (None = off)
 
 # The relevance gate. If the best chunk is further away than this, the system
 # refuses to answer instead of handing the model thin material.

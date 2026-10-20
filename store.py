@@ -213,9 +213,10 @@ def search(
         ) from exc
 
     where = {"category": category} if category else None
-    if config.HYBRID:
+    if config.HYBRID or config.DEDUPE_OVERLAP is not None:
         # Rank every candidate, so keyword matching can pull up a chunk the
-        # embedding put below the top k.
+        # embedding put below the top k, and so dropped duplicates can be
+        # replaced from further down.
         n_results = len(collection.get(where=where, include=[])["ids"])
     else:
         n_results = min(top_k, collection.count())
@@ -241,7 +242,30 @@ def search(
         )
     if config.HYBRID:
         results = _hybrid_rerank(question, results)
+    if config.DEDUPE_OVERLAP is not None:
+        results = _drop_near_duplicates(results, config.DEDUPE_OVERLAP)
     return results[:top_k]
+
+
+def _drop_near_duplicates(results: list[Result], max_overlap: float) -> list[Result]:
+    """
+    Keep results in order, skipping any whose words overlap too much with one
+    already kept.
+
+    Overlap is shared words over all words (Jaccard). The campus_life housing
+    noise posts all repeat the same library-hours sentence and overlap each
+    other at 0.66–0.75, while the post that actually answers the question
+    overlaps them at about 0.16.
+    """
+    kept: list[Result] = []
+    kept_words: list[set[str]] = []
+    for r in results:
+        words = set(_tokens(r.text))
+        if any(len(words & w) / len(words | w) > max_overlap for w in kept_words):
+            continue
+        kept.append(r)
+        kept_words.append(words)
+    return kept
 
 
 def _tokens(text: str) -> list[str]:

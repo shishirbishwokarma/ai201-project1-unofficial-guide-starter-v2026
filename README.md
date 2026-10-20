@@ -404,7 +404,7 @@ None of my five criteria are missed after the fix; they were all met before it t
 
 **Campus questions my documents don't cover still get past the gate.** "What time does the gym open on weekdays?" scores 0.565 with hybrid search on, under the 0.6 cutoff. The only thing stopping a made-up answer is the grounding instruction, which refused every time I tried it, but that's the "asking nicely" layer the project warns isn't reliable. Lowering the cutoff to about 0.5 would block it, but my library question is at 0.508 now, so I'd start refusing a real question. I stopped here because no single number separates these two in my corpus. Fixing it properly would mean something other than a distance cutoff, like checking whether the top chunk actually mentions the main noun in the question ("gym").
 
-**The same fact is in eight posts, and hybrid search made that more visible.** All seven `housing_*_noise.txt` posts say "the library is open until 2am during term," and so does `study_library_hours.txt`. For the library question, four of my five retrieval slots now go to that one sentence. It's harmless for this question, but for a question that needs two different posts, the duplicates would crowd one out. I'd fix it by removing near-duplicate chunks from the top 5 (if two chunks share most of their words, keep only the closer one). I didn't do it because the unit asks for one change, and I wanted the before/after to be about hybrid search alone.
+**The same fact is in eight posts, and hybrid search made that more visible.** All seven `housing_*_noise.txt` posts say "the library is open until 2am during term," and so does `study_library_hours.txt`. For the library question, four of my five retrieval slots now go to that one sentence. It's harmless for this question, but for a question that needs two different posts, the duplicates would crowd one out. I'd fix it by removing near-duplicate chunks from the top 5 (if two chunks share most of their words, keep only the closer one). I left it out of the main improvement so the before/after would be about hybrid search alone, then did it as the stretch below. It cut the repeats from three to one for the library question, but none of my test questions needs two different posts, so the criteria can't show a difference.
 
 **My scorer is a substring test.** It passed 30 of 30 answers across both runs, but only because the answers happened to use the same wording as my `expects` values. "6" instead of "six" or "2 a.m." instead of "2am" would fail a correct answer, and "20" would pass inside "2020". I checked by reading every answer myself, and that doesn't scale. Next I'd match whole words and accept number variants.
 
@@ -428,6 +428,41 @@ Criteria 4 and 5 I'd mostly keep. Criterion 4 caught exactly what it was meant t
 ## Stretch — A Second Improvement
 
 **Declared before building: removing near-duplicate chunks from the top 5.** Diagnosis it follows from: seven `housing_*_noise.txt` posts plus `study_library_hours.txt` all repeat "the library is open until 2am during term," and with hybrid search on, four of the five slots for my library question go to that one sentence. The change: after ranking, skip any chunk whose words mostly overlap with a chunk already picked, and fill the slot with the next one down. Hybrid search stays on, so this is measured against the After run. I'll run all five criteria three times again (`python run_eval.py --label second`), add a third run log in the same format, and say whether it helped.
+
+**What I changed:** `store.py::_drop_near_duplicates` runs after the hybrid reranking. It walks down the ranked list and skips any chunk whose words overlap more than 0.5 (shared words ÷ all words) with a chunk already picked, so the next one down gets the slot. It's set by `DEDUPE_OVERLAP = 0.5` in `config.py` (`None` turns it off). I picked 0.5 after measuring overlap on the library question's results: the housing noise posts overlap each other at 0.66–0.75, while `study_library_hours.txt` overlaps them at only about 0.16. So 0.5 removes the repeats without touching the post that answers the question.
+
+### Run Log — Second Improvement
+
+Full log: `results/run_2026-10-20_0103_second.md`, written by `run_eval.py::main`. Hybrid search is still on, so this is compared with Run Log — After.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. 88 chunks, each 150–600 characters | 88, 150–600 | 88, 178–549 | 88, 178–549 | 88, 178–549 | MET |
+| 5. Answer contains the `expects` value | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+
+Library question, after the second improvement (`run_eval.py::main`, run 1):
+
+```
+- Best distance: 0.5081 (passed the gate)
+- Sources retrieved: admin_study_abroad.txt, course_cs_340.txt, housing_calder_annexe_noise.txt, money_jobs.txt, study_library_hours.txt
+
+The library is open until 2am during term (from study_library_hours.txt and housing_calder_annexe_noise.txt).
+```
+
+Top 5 for the library question, hybrid only vs. hybrid + dedupe (`store.py::search`):
+
+| # | Hybrid only (After) | Hybrid + dedupe (Second) |
+|---|---|---|
+| 1 | study_library_hours.txt | study_library_hours.txt |
+| 2 | housing_calder_annexe_noise.txt | housing_calder_annexe_noise.txt |
+| 3 | housing_innisfree_hall_noise.txt | course_cs_340.txt |
+| 4 | course_cs_340.txt | money_jobs.txt |
+| 5 | housing_morrow_house_noise.txt | admin_study_abroad.txt |
+
+**Did it help?** It did what it was meant to, but only one question was affected, and none of my criteria moved. Copies of the "2am" sentence in the library question's top 5 went from **three noise posts to one**, and the answer now cites **two files, not four**. The other four questions had no near-duplicates in their top 5, so their results are exactly the same as in the After run, and every distance is unchanged, including the gate's (library still 0.508, gym still 0.565). The table matches the After table at 5 of 5 everywhere, so by my criteria I can't show it helped. What it actually did is free up two retrieval slots on one question. The slots went to `money_jobs.txt` and `admin_study_abroad.txt`, which aren't useful for that question either. That only becomes useful on a question that needs two *different* posts to answer, and none of my five questions does. That's another sign my test set is too easy, which matches what I said in Diagnoses.
 
 ## How I Used AI — Unit 2
 

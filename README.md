@@ -233,15 +233,50 @@ With `--category study`:
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. 88 chunks, each 150–600 characters | 88, 150–600 | 88, 178–549 | 88, 178–549 | 88, 178–549 | MET |
+| 5. Answer contains the `expects` value | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+
+Full log: `results/run_2026-10-20_0012.md`, written by `run_eval.py::main`. Verdicts for criterion 5 come from `scorer.py::judge` (does the answer contain `expects`). Criterion 1 was checked by testing whether any retrieved chunk from `store.py::search` contains `expects`. Criterion 2 was checked by testing whether each of the 15 answers names a `.txt` file.
+
+**Criteria 1, 2 and 5:** one answer from run 2 (`run_eval.py::main`):
+
+```
+### Until what week can I drop a course? — run 2
+
+- Best distance: 0.3055 (passed the gate)
+- Sources retrieved: admin_add_drop_deadline.txt, admin_grade_appeals.txt, admin_pass_fail_option.txt, admin_withdrawal_deadline.txt, advising_registration.txt
+
+You can drop a course through the end of week six, but a drop after week two shows as a W on your transcript. 
+
+Source: admin_add_drop_deadline.txt (and admin_withdrawal_deadline.txt)
+```
+
+The chunk with "six" was retrieved (criterion 1), the answer names a `.txt` source (criterion 2), and it contains `expects` = "six" (criterion 5).
+
+**Criterion 3:** `run_eval.py::check_out_of_scope`, cutoff 0.6, refused 5 of 5:
+
+```
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.825 | refused |
+| How do I change the oil in a diesel engine? | 0.934 | refused |
+| Who won the 1994 World Cup? | 0.886 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.844 | refused |
+| How do I write a for loop in Rust? | 0.896 | refused |
+```
+
+**Criterion 4:** `python chunker.py` (`chunker.py::describe` over `chunker.py::split_documents`):
+
+```
+88 chunks, 317 characters on average (shortest 178, longest 549), produced by chunker.py::split_documents
+```
 
 ## Verdicts
 

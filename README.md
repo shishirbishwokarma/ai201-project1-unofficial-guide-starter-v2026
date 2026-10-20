@@ -398,9 +398,27 @@ Partly. It fixed what it was aimed at, but my criteria can't show it, and it mov
 
      Milestone 5. -->
 
+None of my five criteria are missed after the fix; they were all met before it too. But "nothing missed" isn't the same as "nothing broken". These are the problems I know about and left in:
+
+**Campus questions my documents don't cover still get past the gate.** "What time does the gym open on weekdays?" scores 0.565 with hybrid search on, under the 0.6 cutoff. The only thing stopping a made-up answer is the grounding instruction, which refused every time I tried it, but that's the "asking nicely" layer the project warns isn't reliable. Lowering the cutoff to about 0.5 would block it, but my library question is at 0.508 now, so I'd start refusing a real question. I stopped here because no single number separates these two in my corpus. Fixing it properly would mean something other than a distance cutoff, like checking whether the top chunk actually mentions the main noun in the question ("gym").
+
+**The same fact is in eight posts, and hybrid search made that more visible.** All seven `housing_*_noise.txt` posts say "the library is open until 2am during term," and so does `study_library_hours.txt`. For the library question, four of my five retrieval slots now go to that one sentence. It's harmless for this question, but for a question that needs two different posts, the duplicates would crowd one out. I'd fix it by removing near-duplicate chunks from the top 5 (if two chunks share most of their words, keep only the closer one). I didn't do it because the unit asks for one change, and I wanted the before/after to be about hybrid search alone.
+
+**My scorer is a substring test.** It passed 30 of 30 answers across both runs, but only because the answers happened to use the same wording as my `expects` values. "6" instead of "six" or "2 a.m." instead of "2am" would fail a correct answer, and "20" would pass inside "2020". I checked by reading every answer myself, and that doesn't scale. Next I'd match whole words and accept number variants.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+I'd write three of my five criteria differently. The common mistake was that I set targets I already expected to hit, so the criteria couldn't tell me anything new.
+
+**Criterion 3 (the gate).** I'd test it with campus questions my documents don't answer, not questions about Mongolia and Rust. Those were never going to land anywhere near 0.6, so 5 of 5 didn't prove much. The questions that matter are the gym and ID-card kind, which sit at 0.53–0.58, and my gate lets them through. I'd write it as "at least 4 of 5 *campus* questions my documents don't cover are refused by the gate." I'd expect to miss that right now, which is the point.
+
+**Criterion 1 (retrieval).** "The retrieved chunks include one with the answer" accepts anything in the top 5, so the library question passed at #2 behind the wrong post. I'd make it "the answer is in the **top-ranked** chunk for at least 4 of 5 questions." That version would have shown my hybrid search fix, going from 4 of 5 to 5 of 5. The criterion I actually wrote couldn't show the difference.
+
+**Criterion 2 (sources).** "Names at least one source" is met by naming any file. I'd change it to "names a source that actually contains the fact." That's harder to check automatically, but it's what I actually care about. When the model cited `housing_calder_annexe_noise.txt` for library hours, I had to open the file to find out it was right.
+
+Criteria 4 and 5 I'd mostly keep. Criterion 4 caught exactly what it was meant to (88 posts → 88 chunks), and criterion 5 is fine as a target. It just needs a better scorer behind it.

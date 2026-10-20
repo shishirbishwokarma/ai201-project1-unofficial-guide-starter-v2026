@@ -424,3 +424,11 @@ I'd write three of my five criteria differently. The common mistake was that I s
 **Criterion 2 (sources).** "Names at least one source" is met by naming any file. I'd change it to "names a source that actually contains the fact." That's harder to check automatically, but it's what I actually care about. When the model cited `housing_calder_annexe_noise.txt` for library hours, I had to open the file to find out it was right.
 
 Criteria 4 and 5 I'd mostly keep. Criterion 4 caught exactly what it was meant to (88 posts → 88 chunks), and criterion 5 is fine as a target. It just needs a better scorer behind it.
+
+## How I Used AI — Unit 2
+
+**1. Questioning a 5/5.** My scorer came out 5/5 on the first try, and I asked Claude whether that meant the answers were actually right. It pointed out that a substring test is wrong in both directions: "20" would pass inside "2020", and "six" would fail against an answer that said "6". So I didn't trust the number on its own. All 15 answers in the run log were read to check for false passes before I wrote MET for criterion 5, and the scorer's weakness went into What's Still Broken.
+
+**2. A source that looked wrong.** While checking criterion 2, Claude flagged that one library answer cited `housing_calder_annexe_noise.txt`, which looked like the wrong file for library hours. Opening it showed the post does say the library is open until 2am, so the citation was right. Following that up turned into one of my main findings: all seven housing noise posts repeat the same sentence, which is why hybrid search filled the top 5 with them.
+
+**3. Whether a code change was allowed.** Before picking an improvement, I asked whether changing code would break the rule that you only revise a criterion when it couldn't be measured. The answer was that the rule is about `criteria.md`, not code, and that one code change is what Unit 2 asks for. That's also why `criteria.md` has no revisions: I could score all five consistently and missed none, so my ideas for tighter criteria went in Diagnoses and What I'd Do Differently and stayed out of the file.

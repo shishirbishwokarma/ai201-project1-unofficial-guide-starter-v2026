@@ -317,6 +317,16 @@ The chunk with "six" was retrieved (criterion 1), the answer names a `.txt` sour
 
      Milestone 3. -->
 
+I didn't miss anything. All five criteria came out 5 of 5 (or 88 of 88) in every run. Looking back, though, that's mostly because I made some of them too easy to pass.
+
+**Criterion 3 is the clearest case.** My five out-of-scope questions are about Mongolia, diesel engines, the World Cup, ibuprofen and Rust. None of them comes anywhere near a campus-life post; the closest was 0.825 against a 0.6 cutoff. I even guessed that the ibuprofen question might sneak through because of `health_center.txt`, and it didn't come close. So the gate "passing" doesn't tell me much. The questions that actually test it are campus questions my documents don't answer. I tried two in Unit 1: "What time does the gym open on weekdays?" (0.535) and "How much does a replacement student ID cost?" (0.584). Both got through the gate, and only the grounding instruction stopped the model from making something up. If I swapped those kinds of questions into `OUT_OF_SCOPE`, criterion 3 would fail as written. That's the one I'd tighten: **at least 4 of 5 near-miss campus questions refused by the gate**, not 4 of 5 questions from a different world.
+
+**Criterion 1 is the next weakest.** "The retrieved chunks include one that contains the answer" lets anything in the top 5 count. My library question only passed because the right post came back second, behind `admin_library_holds.txt`, which just shares the word "library." I'd tighten it to **the answer is in the top-ranked chunk for at least 4 of 5 questions**. Under that version the library question fails, and I'd want to know that.
+
+**Criterion 5 met its target, but I don't fully trust the check.** `judge` is a plain substring test, so "20" would pass inside "2020" and "6" would fail against "six." It didn't matter this time because I read all 15 answers and they were all right. But the scorer is only as good as my reading of it, so the 5 of 5 depends partly on me, not just on the scorer.
+
+There is one pattern behind all of this: my corpus has **lookalike documents**. Add/drop sits next to withdrawal, library hours sits next to library holds, and two different posts mention the 2am closing time. My questions mostly avoided that trap, which is why the numbers look clean. The weak spot is retrieval picking the post that shares words with the question when it should pick the post that answers it.
+
 ## The Improvement
 
 **What I changed:**

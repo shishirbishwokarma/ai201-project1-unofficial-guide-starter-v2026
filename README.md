@@ -245,6 +245,8 @@ With `--category study`:
 
 Full log: `results/run_2026-10-20_0012.md`, written by `run_eval.py::main`. Verdicts for criterion 5 come from `scorer.py::judge` (does the answer contain `expects`). Criterion 1 was checked by testing whether any retrieved chunk from `store.py::search` contains `expects`. Criterion 2 was checked by testing whether each of the 15 answers names a `.txt` file.
 
+**Why all three runs match:** the runs weren't read from a cache. `run_eval.py::run_once` calls the model with `cache=False`, and the answers changed wording between runs. For example, the work-hours question came back as "The maximum number of hours you can work on campus during term is 20 hours a week", then "The maximum is 20 hours a week during term", then "The maximum number of hours a week you can work on campus during term is 20 hours." The verdicts match because retrieval is deterministic (same chunks, same distances every time), and the model put the right fact in each answer, worded differently each time.
+
 **Criteria 1, 2 and 5:** one answer from run 2 (`run_eval.py::main`):
 
 ```

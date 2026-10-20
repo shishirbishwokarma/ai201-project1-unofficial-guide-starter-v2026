@@ -425,6 +425,10 @@ I'd write three of my five criteria differently. The common mistake was that I s
 
 Criteria 4 and 5 I'd mostly keep. Criterion 4 caught exactly what it was meant to (88 posts → 88 chunks), and criterion 5 is fine as a target. It just needs a better scorer behind it.
 
+## Stretch — A Second Improvement
+
+**Declared before building: removing near-duplicate chunks from the top 5.** Diagnosis it follows from: seven `housing_*_noise.txt` posts plus `study_library_hours.txt` all repeat "the library is open until 2am during term," and with hybrid search on, four of the five slots for my library question go to that one sentence. The change: after ranking, skip any chunk whose words mostly overlap with a chunk already picked, and fill the slot with the next one down. Hybrid search stays on, so this is measured against the After run. I'll run all five criteria three times again (`python run_eval.py --label second`), add a third run log in the same format, and say whether it helped.
+
 ## How I Used AI — Unit 2
 
 **1. Questioning a 5/5.** My scorer came out 5/5 on the first try, and I asked Claude whether that meant the answers were actually right. It pointed out that a substring test is wrong in both directions: "20" would pass inside "2020", and "six" would fail against an answer that said "6". So I didn't trust the number on its own. All 15 answers in the run log were read to check for false passes before I wrote MET for criterion 5, and the scorer's weakness went into What's Still Broken.
